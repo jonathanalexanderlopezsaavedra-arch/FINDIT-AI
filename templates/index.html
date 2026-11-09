@@ -1,0 +1,278 @@
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FINDIT AI | Visual Intelligence</title>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            background: #080d18;
+            color: #ffffff;
+            font-family: Arial, sans-serif;
+        }
+
+        header {
+            padding: 25px 8%;
+            border-bottom: 1px solid #1c2940;
+        }
+
+        .logo {
+            font-size: 25px;
+            font-weight: bold;
+            letter-spacing: 3px;
+            color: #55d6ff;
+        }
+
+        main {
+            max-width: 900px;
+            margin: 90px auto;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .tag {
+            color: #55d6ff;
+            font-size: 12px;
+            letter-spacing: 3px;
+            margin-bottom: 20px;
+        }
+
+        h1 {
+            font-size: clamp(35px, 6vw, 60px);
+            margin-bottom: 20px;
+        }
+
+        .description {
+            color: #aab6ca;
+            line-height: 1.7;
+            max-width: 600px;
+            margin: 0 auto 40px;
+        }
+
+        .upload-area {
+            background: #111b2d;
+            border: 1px dashed #42617f;
+            border-radius: 18px;
+            padding: 45px 20px;
+            max-width: 600px;
+            margin: auto;
+        }
+
+        .upload-icon {
+            font-size: 45px;
+            margin-bottom: 15px;
+        }
+
+        .upload-area p {
+            color: #aab6ca;
+            margin-bottom: 22px;
+        }
+
+        .upload-button {
+            display: inline-block;
+            padding: 14px 28px;
+            background: #55d6ff;
+            color: #07111d;
+            font-weight: bold;
+            border-radius: 9px;
+            cursor: pointer;
+        }
+
+        .upload-button:hover {
+            background: #8be3ff;
+        }
+
+        .upload-button:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        #imagen {
+            display: none;
+        }
+
+        #preview {
+            display: none;
+            max-width: 100%;
+            max-height: 350px;
+            margin: 25px auto 0;
+            border-radius: 12px;
+            object-fit: contain;
+        }
+
+        #fileName {
+            color: #55d6ff;
+            margin-top: 15px;
+            overflow-wrap: anywhere;
+        }
+
+        #resultado {
+            margin-top: 20px;
+            color: #55d6ff;
+            line-height: 1.6;
+        }
+
+        footer {
+            text-align: center;
+            color: #65748b;
+            padding: 30px 15px;
+            font-size: 13px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <div class="logo">FINDIT AI</div>
+    </header>
+
+    <main>
+        <div class="tag">ARTIFICIAL INTELLIGENCE</div>
+
+        <h1>Visual Intelligence</h1>
+
+        <p class="description">
+            Explora el mundo visual con inteligencia artificial.
+            Selecciona una fotografía y comienza tu experiencia
+            de búsqueda visual.
+        </p>
+
+        <section class="upload-area">
+
+            <div class="upload-icon">⌁</div>
+
+            <h2>Sube una fotografía</h2>
+
+            <p>Selecciona una imagen JPG, PNG o WEBP.</p>
+
+            <label for="imagen" class="upload-button">
+                Seleccionar imagen
+            </label>
+
+            <input
+                type="file"
+                id="imagen"
+                accept="image/jpeg,image/png,image/webp"
+            >
+
+            <img id="preview" alt="Vista previa de la fotografía">
+
+            <div id="fileName"></div>
+
+            <button
+                id="analizarBtn"
+                class="upload-button"
+                style="display:none; border:none; margin-top:20px;"
+            >
+                Analizar fotografía
+            </button>
+
+            <div id="resultado"></div>
+
+        </section>
+    </main>
+
+    <footer>
+        FINDIT AI · Visual Intelligence Platform
+    </footer>
+
+    <script>
+        const inputImagen = document.getElementById("imagen");
+        const preview = document.getElementById("preview");
+        const fileName = document.getElementById("fileName");
+        const analizarBtn = document.getElementById("analizarBtn");
+        const resultado = document.getElementById("resultado");
+
+        // Seleccionar y mostrar fotografía
+        inputImagen.addEventListener("change", function () {
+
+            const archivo = this.files[0];
+
+            preview.style.display = "none";
+            analizarBtn.style.display = "none";
+            resultado.textContent = "";
+            fileName.textContent = "";
+
+            if (!archivo) return;
+
+            const formatos = [
+                "image/jpeg",
+                "image/png",
+                "image/webp"
+            ];
+
+            if (!formatos.includes(archivo.type)) {
+                alert("Selecciona una imagen JPG, PNG o WEBP.");
+                this.value = "";
+                return;
+            }
+
+            preview.src = URL.createObjectURL(archivo);
+            preview.style.display = "block";
+
+            fileName.textContent = archivo.name;
+
+            analizarBtn.style.display = "inline-block";
+        });
+
+        // Enviar fotografía al servidor Flask
+        analizarBtn.addEventListener("click", async function () {
+
+            const archivo = inputImagen.files[0];
+
+            if (!archivo) return;
+
+            const datos = new FormData();
+
+            datos.append("imagen", archivo);
+
+            analizarBtn.disabled = true;
+            analizarBtn.textContent = "Procesando...";
+
+            resultado.textContent = "Validando fotografía...";
+
+            try {
+
+                const respuesta = await fetch("/analizar", {
+                    method: "POST",
+                    body: datos
+                });
+
+                const informacion = await respuesta.json();
+
+                if (!respuesta.ok) {
+                    throw new Error(informacion.error);
+                }
+
+                resultado.textContent =
+                    "Fotografía validada: " +
+                    informacion.formato + " · " +
+                    informacion.ancho + " × " +
+                    informacion.alto + " píxeles.";
+
+            } catch (error) {
+
+                resultado.textContent =
+                    "Error: " + error.message;
+
+            } finally {
+
+                analizarBtn.disabled = false;
+                analizarBtn.textContent = "Analizar fotografía";
+
+            }
+        });
+    </script>
+
+</body>
+</html>
